@@ -195,91 +195,98 @@
     </div>
 
     <script>
-        const ratingInputs = document.querySelectorAll("input[name='rating']");
-        const submitBtn = document.getElementById("submitBtn");
-        const feedbackMessage = document.getElementById("feedbackMessage");
-        const commentsBox = document.getElementById("comments");
-        const viewSelector = document.getElementById("viewSelector");
-        const mainSection = document.getElementById("mainSection");
-        const reviewSection = document.getElementById("reviewSection");
-        const feedbackList = document.getElementById("feedbackList");
-        const loginForm = document.getElementById("loginForm");
-        const passwordInput = document.getElementById("password");
-        const loginBtn = document.getElementById("loginBtn");
+    const ratingInputs = document.querySelectorAll("input[name='rating']");
+    const submitBtn = document.getElementById("submitBtn");
+    const feedbackMessage = document.getElementById("feedbackMessage");
+    const commentsBox = document.getElementById("comments");
+    const viewSelector = document.getElementById("viewSelector");
+    const mainSection = document.getElementById("mainSection");
+    const reviewSection = document.getElementById("reviewSection");
+    const feedbackList = document.getElementById("feedbackList");
+    const loginForm = document.getElementById("loginForm");
+    const passwordInput = document.getElementById("password");
+    const loginBtn = document.getElementById("loginBtn");
+    const menuIcon = document.getElementById("menuIcon");
 
-        let isSubmitted = false;
+    let isSubmitted = false;
+    const SHEET_URL = "https://script.google.com/macros/s/AKfycbwY4JBGe8DF7kX0WIl7IRxPyPkaYyizGL668Nsld-14SSf_pudn9dR8jw-lnUj_JDxvmQ/exec";
 
-        // Handle section switching
-        menuIcon.addEventListener("click", () => {
-            viewSelector.style.display = viewSelector.style.display === "block" ? "none" : "block";
-        });
+    // Handle section switching
+    menuIcon.addEventListener("click", () => {
+        viewSelector.style.display = viewSelector.style.display === "block" ? "none" : "block";
+    });
 
-        viewSelector.addEventListener("change", () => {
-            document.getElementById("mainSection").style.display = viewSelector.value === "main" ? "block" : "none";
-            document.getElementById("reviewSection").style.display = viewSelector.value === "review" ? "block" : "none";
-            viewSelector.style.display = "none"; // Hide dropdown after selection
-        });
+    viewSelector.addEventListener("change", () => {
+        mainSection.style.display = viewSelector.value === "main" ? "block" : "none";
+        reviewSection.style.display = viewSelector.value === "review" ? "block" : "none";
+        viewSelector.style.display = "none";
+    });
 
-        // Handle login
-        loginBtn.addEventListener("click", () => {
-            if (passwordInput.value === "admin123") {
-                loginForm.style.display = "none";
-                feedbackList.style.display = "block";
-                loadFeedback();
-            } else {
-                alert("Incorrect password!");
-            }
-        });
+    // Login for review
+    loginBtn.addEventListener("click", () => {
+        if (passwordInput.value === "admin123") {
+            loginForm.style.display = "none";
+            feedbackList.style.display = "block";
+            loadFeedback();
+        } else {
+            alert("Incorrect password!");
+        }
+    });
 
-        // Handle rating selection
-        ratingInputs.forEach(input => {
-            input.addEventListener("change", () => {
-                if (!isSubmitted) submitBtn.disabled = false;
+    // Rating interaction
+    ratingInputs.forEach(input => {
+        input.addEventListener("change", () => {
+            if (!isSubmitted) submitBtn.disabled = false;
 
-                const selectedRating = document.querySelector("input[name='rating']:checked")?.value;
-
-                commentsBox.style.display = selectedRating <= 3 ? "block" : "none";
-            });
-        });
-
-        // Handle form submission
-        submitBtn.addEventListener("click", () => {
-            if (isSubmitted) return;
-
-            isSubmitted = true;
             const selectedRating = document.querySelector("input[name='rating']:checked")?.value;
-            const comments = commentsBox.value;
-
-            if (selectedRating <= 3) {
-                saveFeedback(selectedRating, comments);
-                feedbackMessage.textContent = "Thank you for your feedback!";
-                feedbackMessage.style.display = "block";
-                disableInteraction();
-            } else {
-                window.location.href = "https://g.page/r/CQPTSh293bazEAI/review";
-            }
+            commentsBox.style.display = selectedRating <= 3 ? "block" : "none";
         });
+    });
 
-        // Save feedback to localStorage
-        function saveFeedback(rating, comments) {
-            const feedback = JSON.parse(localStorage.getItem("feedback")) || [];
-            feedback.push({ rating, comments });
-            localStorage.setItem("feedback", JSON.stringify(feedback));
-        }
+    // Submit feedback
+    submitBtn.addEventListener("click", () => {
+        if (isSubmitted) return;
 
-        // Load feedback from localStorage
-        function loadFeedback() {
-            const feedback = JSON.parse(localStorage.getItem("feedback")) || [];
-            feedbackList.innerHTML = feedback.map(
-                fb => `<div class="feedback-item"><p><strong>Rating:</strong> ${fb.rating}</p><p><strong>Comments:</strong> ${fb.comments}</p></div>`
-            ).join("");
-        }
+        const selectedRating = document.querySelector("input[name='rating']:checked")?.value;
+        const comments = commentsBox.value;
 
-        // Disable further interaction after submission
-        function disableInteraction() {
-            ratingInputs.forEach(input => input.disabled = true);
-            submitBtn.disabled = true;
+        if (selectedRating <= 3) {
+            saveFeedback(selectedRating, comments);
+        } else {
+            window.location.href = "https://g.page/r/CQPTSh293bazEAI/review";
         }
+    });
+
+    // Save feedback to Google Sheet
+    function saveFeedback(rating, comments) {
+        fetch(SHEET_URL, {
+            method: "POST",
+            body: JSON.stringify({ rating, comments }),
+            headers: { "Content-Type": "application/json" }
+        }).then(() => {
+            feedbackMessage.textContent = "Thank you for your feedback!";
+            feedbackMessage.style.display = "block";
+            disableInteraction();
+            loadFeedback();
+        });
+    }
+
+    // Load feedback from Google Sheet
+    function loadFeedback() {
+        fetch(SHEET_URL)
+            .then(res => res.json())
+            .then(data => {
+                feedbackList.innerHTML = data.map(
+                    fb => `<div class="feedback-item"><p><strong>Rating:</strong> ${fb.rating}</p><p><strong>Comments:</strong> ${fb.comments}</p></div>`
+                ).join("");
+            });
+    }
+
+    // Prevent multiple submissions
+    function disableInteraction() {
+        ratingInputs.forEach(input => input.disabled = true);
+        submitBtn.disabled = true;
+    }
     </script>
 </body>
 </html>
