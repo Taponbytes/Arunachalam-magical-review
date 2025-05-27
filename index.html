@@ -166,7 +166,7 @@
     </div>
 
     <div class="container" id="mainSection">
-        <h1>Arunachalam Pure veg</h1>
+        <h1>Arunachalam pure veg</h1>
         <h1>Rate Your Experience</h1>
         <div class="rating">
             <input type="radio" id="star5" name="rating" value="5">
@@ -195,98 +195,91 @@
     </div>
 
     <script>
-    const ratingInputs = document.querySelectorAll("input[name='rating']");
-    const submitBtn = document.getElementById("submitBtn");
-    const feedbackMessage = document.getElementById("feedbackMessage");
-    const commentsBox = document.getElementById("comments");
-    const viewSelector = document.getElementById("viewSelector");
-    const mainSection = document.getElementById("mainSection");
-    const reviewSection = document.getElementById("reviewSection");
-    const feedbackList = document.getElementById("feedbackList");
-    const loginForm = document.getElementById("loginForm");
-    const passwordInput = document.getElementById("password");
-    const loginBtn = document.getElementById("loginBtn");
-    const menuIcon = document.getElementById("menuIcon");
+        const ratingInputs = document.querySelectorAll("input[name='rating']");
+        const submitBtn = document.getElementById("submitBtn");
+        const feedbackMessage = document.getElementById("feedbackMessage");
+        const commentsBox = document.getElementById("comments");
+        const viewSelector = document.getElementById("viewSelector");
+        const mainSection = document.getElementById("mainSection");
+        const reviewSection = document.getElementById("reviewSection");
+        const feedbackList = document.getElementById("feedbackList");
+        const loginForm = document.getElementById("loginForm");
+        const passwordInput = document.getElementById("password");
+        const loginBtn = document.getElementById("loginBtn");
 
-    let isSubmitted = false;
-    const SHEET_URL = "https://script.google.com/macros/s/AKfycbyCOwN2jMaapZCRbj96ELXMGZGBWU4mFHASxi7f6Vv6KXss387htNGWZ2wRV7ddnT22NQ/exec";
+        let isSubmitted = false;
 
-    // Handle section switching
-    menuIcon.addEventListener("click", () => {
-        viewSelector.style.display = viewSelector.style.display === "block" ? "none" : "block";
-    });
-
-    viewSelector.addEventListener("change", () => {
-        mainSection.style.display = viewSelector.value === "main" ? "block" : "none";
-        reviewSection.style.display = viewSelector.value === "review" ? "block" : "none";
-        viewSelector.style.display = "none";
-    });
-
-    // Login for review
-    loginBtn.addEventListener("click", () => {
-        if (passwordInput.value === "admin123") {
-            loginForm.style.display = "none";
-            feedbackList.style.display = "block";
-            loadFeedback();
-        } else {
-            alert("Incorrect password!");
-        }
-    });
-
-    // Rating interaction
-    ratingInputs.forEach(input => {
-        input.addEventListener("change", () => {
-            if (!isSubmitted) submitBtn.disabled = false;
-
-            const selectedRating = document.querySelector("input[name='rating']:checked")?.value;
-            commentsBox.style.display = selectedRating <= 3 ? "block" : "none";
+        // Handle section switching
+        menuIcon.addEventListener("click", () => {
+            viewSelector.style.display = viewSelector.style.display === "block" ? "none" : "block";
         });
-    });
 
-    // Submit feedback
-    submitBtn.addEventListener("click", () => {
-        if (isSubmitted) return;
-
-        const selectedRating = document.querySelector("input[name='rating']:checked")?.value;
-        const comments = commentsBox.value;
-
-        if (selectedRating <= 3) {
-            saveFeedback(selectedRating, comments);
-        } else {
-            window.location.href = "https://g.page/r/CQPTSh293bazEAI/review";
-        }
-    });
-
-    // Save feedback to Google Sheet
-    function saveFeedback(rating, comments) {
-        fetch(SHEET_URL, {
-            method: "POST",
-            body: JSON.stringify({ rating, comments }),
-            headers: { "Content-Type": "application/json" }
-        }).then(() => {
-            feedbackMessage.textContent = "Thank you for your feedback!";
-            feedbackMessage.style.display = "block";
-            disableInteraction();
-            loadFeedback();
+        viewSelector.addEventListener("change", () => {
+            document.getElementById("mainSection").style.display = viewSelector.value === "main" ? "block" : "none";
+            document.getElementById("reviewSection").style.display = viewSelector.value === "review" ? "block" : "none";
+            viewSelector.style.display = "none"; // Hide dropdown after selection
         });
-    }
 
-    // Load feedback from Google Sheet
-    function loadFeedback() {
-        fetch(SHEET_URL)
-            .then(res => res.json())
-            .then(data => {
-                feedbackList.innerHTML = data.map(
-                    fb => `<div class="feedback-item"><p><strong>Rating:</strong> ${fb.rating}</p><p><strong>Comments:</strong> ${fb.comments}</p></div>`
-                ).join("");
+        // Handle login
+        loginBtn.addEventListener("click", () => {
+            if (passwordInput.value === "admin123") {
+                loginForm.style.display = "none";
+                feedbackList.style.display = "block";
+                loadFeedback();
+            } else {
+                alert("Incorrect password!");
+            }
+        });
+
+        // Handle rating selection
+        ratingInputs.forEach(input => {
+            input.addEventListener("change", () => {
+                if (!isSubmitted) submitBtn.disabled = false;
+
+                const selectedRating = document.querySelector("input[name='rating']:checked")?.value;
+
+                commentsBox.style.display = selectedRating <= 3 ? "block" : "none";
             });
-    }
+        });
 
-    // Prevent multiple submissions
-    function disableInteraction() {
-        ratingInputs.forEach(input => input.disabled = true);
-        submitBtn.disabled = true;
-    }
+        // Handle form submission
+        submitBtn.addEventListener("click", () => {
+            if (isSubmitted) return;
+
+            isSubmitted = true;
+            const selectedRating = document.querySelector("input[name='rating']:checked")?.value;
+            const comments = commentsBox.value;
+
+            if (selectedRating <= 3) {
+                saveFeedback(selectedRating, comments);
+                feedbackMessage.textContent = "Thank you for your feedback!";
+                feedbackMessage.style.display = "block";
+                disableInteraction();
+            } else {
+                window.location.href = "https://g.page/r/CQPTSh293bazEAI/review";
+            }
+        });
+
+        // Save feedback to localStorage
+        function saveFeedback(rating, comments) {
+            const feedback = JSON.parse(localStorage.getItem("feedback")) || [];
+            feedback.push({ rating, comments });
+            localStorage.setItem("feedback", JSON.stringify(feedback));
+        }
+
+        // Load feedback from localStorage
+        function loadFeedback() {
+            const feedback = JSON.parse(localStorage.getItem("feedback")) || [];
+            feedbackList.innerHTML = feedback.map(
+                fb => `<div class="feedback-item"><p><strong>Rating:</strong> ${fb.rating}</p><p><strong>Comments:</strong> ${fb.comments}</p></div>`
+            ).join("");
+        }
+
+        // Disable further interaction after submission
+        function disableInteraction() {
+            ratingInputs.forEach(input => input.disabled = true);
+            submitBtn.disabled = true;
+        }
     </script>
 </body>
 </html>
